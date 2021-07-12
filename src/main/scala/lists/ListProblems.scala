@@ -17,6 +17,7 @@ sealed abstract class RList[+T] {
   def ::[S >: T](elem: S): RList[S] = new ::(elem, this)
   def apply(index: Int): T
   def length: Int
+  def reverse: RList[T]
 }
 
 case object RNil extends RList[Nothing] {
@@ -33,6 +34,8 @@ case object RNil extends RList[Nothing] {
   override def apply(index: Int): Nothing = throw new NoSuchElementException
 
   override def length: Int = 0
+
+  override def reverse: RList[Nothing] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -77,6 +80,29 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     aux(this)
   }
+
+  override def reverse: RList[T] = {
+    /*
+    O(N)
+     */
+    @tailrec
+    def aux(list: RList[T], reversed: RList[T] = RNil): RList[T] = {
+      if(list.isEmpty) reversed
+      else aux(list.tail, reversed.::(list.head))
+    }
+    aux(this)
+  }
+}
+
+object RList {
+  def from[T](iterable: Iterable[T]):RList[T] = {
+    @tailrec
+    def aux(iterable: Iterable[T], acc: RList[T] = RNil): RList[T] = {
+      if (iterable.isEmpty) acc
+      else aux(iterable.tail, iterable.head :: acc)
+    }
+    aux(iterable).reverse
+  }
 }
 
 object ListProblems extends App {
@@ -84,8 +110,15 @@ object ListProblems extends App {
   //val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
   val aSmallList = 1 :: 2 :: 3 :: 4 :: RNil
   val aSmallList2 = 1 :: RNil
+  val aLargeList = RList.from(0 to 50000)
   println(aSmallList(2))
+  println(aLargeList(5348))
+  println(aLargeList(15200))
   println(aSmallList.length)
+  println(aSmallList.reverse)
+  println(aLargeList.reverse)
+  println(aLargeList.length)
   println(aSmallList2.length)
+  println(RList.from(0 to 500))
 
 }
