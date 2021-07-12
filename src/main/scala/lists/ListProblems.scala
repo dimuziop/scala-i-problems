@@ -67,6 +67,9 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
   }
 
   override def length: Int = {
+    /*
+    O(N)
+     */
     @tailrec
     def aux(list: RList[T], value: Int = 0): Int = {
       if (list.isEmpty) value
