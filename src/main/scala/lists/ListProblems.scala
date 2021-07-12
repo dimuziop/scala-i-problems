@@ -18,6 +18,7 @@ sealed abstract class RList[+T] {
   def apply(index: Int): T
   def length: Int
   def reverse: RList[T]
+  def ++[S >: T](anotherList: RList[S]): RList[S]
 }
 
 case object RNil extends RList[Nothing] {
@@ -36,6 +37,9 @@ case object RNil extends RList[Nothing] {
   override def length: Int = 0
 
   override def reverse: RList[Nothing] = RNil
+
+  // Appends list
+  override def ++[S >: Nothing](anotherList: RList[S]): RList[S] = anotherList
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -92,6 +96,18 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     aux(this)
   }
+
+  override def ++[S >: T](anotherList: RList[S]): RList[S] = { // head :: (tail ++ anotherList) // stack recursive
+    /*
+    Complexity: O(M+N)
+     */
+    @tailrec
+    def aux(list: RList[S], concatenated: RList[S]): RList[S] = {
+      if (list.isEmpty) concatenated
+      else aux(list.tail, list.head :: concatenated)
+    }
+    aux(this.reverse, anotherList)
+  }
 }
 
 object RList {
@@ -109,9 +125,9 @@ object ListProblems extends App {
 
   //val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
   val aSmallList = 1 :: 2 :: 3 :: 4 :: RNil
-  val aSmallList2 = 1 :: RNil
+  val aSmallList2 = 1 :: 2 :: RNil
   val aLargeList = RList.from(0 to 50000)
-  println(aSmallList(2))
+  /*println(aSmallList(2))
   println(aLargeList(5348))
   println(aLargeList(15200))
   println(aSmallList.length)
@@ -119,6 +135,8 @@ object ListProblems extends App {
   println(aLargeList.reverse)
   println(aLargeList.length)
   println(aSmallList2.length)
-  println(RList.from(0 to 500))
+  println(RList.from(0 to 500))*/
+
+  println(aSmallList ++ aSmallList2)
 
 }
