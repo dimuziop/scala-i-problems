@@ -15,6 +15,7 @@ sealed abstract class RList[+T] {
   def isEmpty: Boolean
   def headOption: Option[T]
   def ::[S >: T](elem: S): RList[S] = new ::(elem, this)
+  def apply(index: Int): T
 }
 
 case object RNil extends RList[Nothing] {
@@ -28,6 +29,8 @@ case object RNil extends RList[Nothing] {
 
   override def toString: String = "[]"
 
+  override def apply(index: Int): Nothing = throw new NoSuchElementException
+
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -35,6 +38,21 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
   override def isEmpty: Boolean = false
 
   override def headOption: Option[T] = Some(head)
+
+  override def apply(index: Int): T = {
+    /*
+    Complexity of this algorithm
+    O(min(N, index))
+     */
+    @tailrec
+    def helper(remaining: RList[T], count: Int = 0): T = {
+      if (count == index) remaining.head
+      //else if (remaining.isEmpty) throw new NoSuchElementException // no needed cause head empty throw the exception
+      else helper(remaining.tail, count + 1)
+    }
+    if(index < 0) throw new NoSuchElementException
+    helper(this)
+  }
 
   override def toString: String = {
     @tailrec
@@ -52,6 +70,6 @@ object ListProblems extends App {
 
   //val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
   val aSmallList = 1 :: 2 :: 3 :: 4 :: RNil
-  println(0 :: aSmallList)
+  println(aSmallList(2))
 
 }
