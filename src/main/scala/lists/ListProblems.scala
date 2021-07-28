@@ -117,12 +117,12 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
 
   override def removeAt(index: Int): RList[T] = {
     @tailrec
-    def aux(list: RList[T], newList: RList[T], currentPosition: Int = 0): RList[T] = {
+    def aux(list: RList[T], newList: RList[T] = RNil, currentPosition: Int = 0): RList[T] = {
       if(currentPosition < index && list.isEmpty) RNil
       else if (currentPosition == index) newList.reverse ++ list.tail
       else aux(list.tail, list.head :: newList, currentPosition + 1)
     }
-    aux(this, RNil)
+    aux(this)
   }
 }
 
