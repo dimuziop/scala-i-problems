@@ -15,10 +15,14 @@ sealed abstract class RList[+T] {
   def isEmpty: Boolean
   def headOption: Option[T]
   def ::[S >: T](elem: S): RList[S] = new ::(elem, this)
+  /**
+   * Easy problems
+   */
   def apply(index: Int): T
   def length: Int
   def reverse: RList[T]
   def ++[S >: T](anotherList: RList[S]): RList[S]
+  def removeAt(index: Int): RList[T]
 }
 
 case object RNil extends RList[Nothing] {
@@ -40,6 +44,8 @@ case object RNil extends RList[Nothing] {
 
   // Appends list
   override def ++[S >: Nothing](anotherList: RList[S]): RList[S] = anotherList
+
+  override def removeAt(index: Int): RList[Nothing] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -108,6 +114,16 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     }
     aux(this.reverse, anotherList)
   }
+
+  override def removeAt(index: Int): RList[T] = {
+    @tailrec
+    def aux(list: RList[T], newList: RList[T], currentPosition: Int = 0): RList[T] = {
+      if(currentPosition < index && list.isEmpty) RNil
+      else if (currentPosition == index) newList.reverse ++ list.tail
+      else aux(list.tail, list.head :: newList, currentPosition + 1)
+    }
+    aux(this, RNil)
+  }
 }
 
 object RList {
@@ -137,6 +153,9 @@ object ListProblems extends App {
   println(aSmallList2.length)
   println(RList.from(0 to 500))*/
 
-  println(aSmallList ++ aSmallList2)
+  //println(aSmallList ++ aSmallList2)
+
+  println(aSmallList)
+  println(aSmallList.removeAt(3))
 
 }
