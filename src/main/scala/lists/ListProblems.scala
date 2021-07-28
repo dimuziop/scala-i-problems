@@ -34,6 +34,7 @@ sealed abstract class RList[+T] {
    */
   // run -length encoding
   def rle: RList[(T, Int)]
+  def duplicateEach(times: Int): RList[T]
 }
 
 case object RNil extends RList[Nothing] {
@@ -68,6 +69,8 @@ case object RNil extends RList[Nothing] {
    * Medium difficulty
    */
   override def rle: RList[(Nothing, Int)] = RNil
+
+  override def duplicateEach(times: Int): RList[Nothing] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -199,6 +202,17 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
 
     aux(this.tail, this.head -> 1)
   }
+
+  //Complexity: O(N * K)
+  override def duplicateEach(times: Int): RList[T] = {
+    @tailrec
+    def aux(value: T, acc: RList[T] = RNil, current: Int = 0): RList[T] = {
+      if (current == times) acc
+      else aux(value, value :: acc, current + 1)
+    }
+
+    this.flatMap(x => aux(x))
+  }
 }
 
 object RList {
@@ -243,6 +257,10 @@ object ListProblems extends App {
 
   def testMediumDifficultyFunctions(): Unit = {
     println((1 :: 1 :: 1 :: 2 :: 2 :: 3 :: RNil).rle)
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).duplicateEach(3))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).duplicateEach(1))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).duplicateEach(0))
+    println(RList.from(1 to 15000).duplicateEach(5))
   }
 
   testMediumDifficultyFunctions()
