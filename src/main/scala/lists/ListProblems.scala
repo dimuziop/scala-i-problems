@@ -23,6 +23,11 @@ sealed abstract class RList[+T] {
   def reverse: RList[T]
   def ++[S >: T](anotherList: RList[S]): RList[S]
   def removeAt(index: Int): RList[T]
+
+  // the big three
+  def map[S](f: T => S): RList[S]
+  def flatMap[S](f: T => RList[S]): RList[S]
+  def filter(f: T => Boolean): RList[T]
 }
 
 case object RNil extends RList[Nothing] {
@@ -46,6 +51,12 @@ case object RNil extends RList[Nothing] {
   override def ++[S >: Nothing](anotherList: RList[S]): RList[S] = anotherList
 
   override def removeAt(index: Int): RList[Nothing] = RNil
+
+  override def map[S](f: Nothing => S): RList[S] = RNil
+
+  override def flatMap[S](f: Nothing => RList[S]): RList[S] = RNil
+
+  override def filter(f: Nothing => Boolean): RList[Nothing] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -115,12 +126,43 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     aux(this.reverse, anotherList)
   }
 
+  /*
+  Complexity: O(N)
+   */
   override def removeAt(index: Int): RList[T] = {
     @tailrec
     def aux(list: RList[T], newList: RList[T] = RNil, currentPosition: Int = 0): RList[T] = {
       if(currentPosition < index && list.isEmpty) newList.reverse
       else if (currentPosition == index) newList.reverse ++ list.tail
       else aux(list.tail, list.head :: newList, currentPosition + 1)
+    }
+    if (index < 0) return this
+    aux(this)
+  }
+
+  override def map[S](f: T => S): RList[S] = {
+    @tailrec
+    def aux(list: RList[T], newList: RList[S] = RNil): RList[S] = {
+      if (list.isEmpty) newList.reverse
+      else aux(list.tail, f(list.head) :: newList)
+    }
+    aux(this)
+  }
+
+  override def flatMap[S](f: T => RList[S]): RList[S] = {
+    @tailrec
+    def aux(list: RList[T], newList: RList[S] = RNil): RList[S] = {
+      if (list.isEmpty) newList.reverse
+      else aux(list.tail, f(list.head) ++ newList)
+    }
+    aux(this)
+  }
+
+  override def filter(f: T => Boolean): RList[T] = {
+    @tailrec
+    def aux(list: RList[T], newList: RList[T] = RNil): RList[T] = {
+      if(list.isEmpty) newList.reverse
+      else aux(list.tail, if (f(list.head)) list.head :: newList else newList)
     }
     aux(this)
   }
@@ -157,5 +199,9 @@ object ListProblems extends App {
 
   println(aSmallList)
   println(aSmallList.removeAt(10))
+
+  println(aSmallList.map(x => x * 2))
+  println(aSmallList.filter(x => x % 2 == 0))
+  println(aSmallList.flatMap(x => (x :: x *2 :: RNil).reverse))
 
 }
