@@ -28,6 +28,12 @@ sealed abstract class RList[+T] {
   def map[S](f: T => S): RList[S]
   def flatMap[S](f: T => RList[S]): RList[S]
   def filter(f: T => Boolean): RList[T]
+
+  /**
+   * Medium difficulty
+   */
+  // run -length encoding
+  def rle: RList[(T, Int)]
 }
 
 case object RNil extends RList[Nothing] {
@@ -57,6 +63,11 @@ case object RNil extends RList[Nothing] {
   override def flatMap[S](f: Nothing => RList[S]): RList[S] = RNil
 
   override def filter(f: Nothing => Boolean): RList[Nothing] = RNil
+
+  /**
+   * Medium difficulty
+   */
+  override def rle: RList[(Nothing, Int)] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -140,6 +151,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     aux(this)
   }
 
+  // Complexity O(N)
   override def map[S](f: T => S): RList[S] = {
     @tailrec
     def aux(list: RList[T], newList: RList[S] = RNil): RList[S] = {
@@ -149,15 +161,18 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     aux(this)
   }
 
+  // sum of all the length of f(x) = Z
+  //Complexity: O(Z^2)
   override def flatMap[S](f: T => RList[S]): RList[S] = {
     @tailrec
     def aux(list: RList[T], newList: RList[S] = RNil): RList[S] = {
       if (list.isEmpty) newList.reverse
-      else aux(list.tail, f(list.head) ++ newList)
+      else aux(list.tail, f(list.head).reverse ++ newList)
     }
     aux(this)
   }
 
+  // Complexity O(N)
   override def filter(f: T => Boolean): RList[T] = {
     @tailrec
     def aux(list: RList[T], newList: RList[T] = RNil): RList[T] = {
@@ -165,6 +180,24 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       else aux(list.tail, if (f(list.head)) list.head :: newList else newList)
     }
     aux(this)
+  }
+
+  /**
+   * Medium difficulty
+   */
+    /*
+    Complexity: O(N)
+     */
+  override def rle: RList[(T, Int)] = {
+    @tailrec
+    def aux(remainingList: RList[T], lastTuple: (T, Int), newList: RList[(T, Int)] = RNil) : RList[(T, Int)] = {
+      if (remainingList.isEmpty && lastTuple._2 == 0) newList.reverse
+      else if (remainingList.isEmpty) (lastTuple :: newList).reverse
+      else if (remainingList.head == lastTuple._1) aux(remainingList.tail, lastTuple._1 -> (lastTuple._2 + 1), newList) // could be lastTuple.copy()
+      else aux(remainingList.tail, remainingList.head -> 1, lastTuple :: newList)
+    }
+
+    aux(this.tail, this.head -> 1)
   }
 }
 
@@ -181,10 +214,10 @@ object RList {
 
 object ListProblems extends App {
 
-  //val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
+  def testEasyFunctions(): Unit = {//val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
   val aSmallList = 1 :: 2 :: 3 :: 4 :: RNil
   val aSmallList2 = 1 :: 2 :: RNil
-  val aLargeList = RList.from(0 to 50000)
+  val aLargeList = RList.from(0 to 5000000)
   /*println(aSmallList(2))
   println(aLargeList(5348))
   println(aLargeList(15200))
@@ -202,6 +235,17 @@ object ListProblems extends App {
 
   println(aSmallList.map(x => x * 2))
   println(aSmallList.filter(x => x % 2 == 0))
-  println(aSmallList.flatMap(x => (x :: x *2 :: RNil).reverse))
+  val time = System.currentTimeMillis()
+  //aLargeList.flatMap(x => x :: x *2 :: RNil) // 3 secs
+  aLargeList.map(_ + 2) // 1sec
+  println("time:" + (System.currentTimeMillis() - time))
+}
+
+  def testMediumDifficultyFunctions(): Unit = {
+    println((1 :: 1 :: 1 :: 2 :: 2 :: 3 :: RNil).rle)
+  }
+
+  testMediumDifficultyFunctions()
+
 
 }
