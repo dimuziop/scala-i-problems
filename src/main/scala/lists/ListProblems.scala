@@ -35,6 +35,7 @@ sealed abstract class RList[+T] {
   // run -length encoding
   def rle: RList[(T, Int)]
   def duplicateEach(times: Int): RList[T]
+  def rotate(k: Int): RList[T]
 }
 
 case object RNil extends RList[Nothing] {
@@ -71,6 +72,8 @@ case object RNil extends RList[Nothing] {
   override def rle: RList[(Nothing, Int)] = RNil
 
   override def duplicateEach(times: Int): RList[Nothing] = RNil
+
+  override def rotate(k: Int): RList[Nothing] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -213,6 +216,16 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
 
     this.flatMap(x => aux(x))
   }
+
+  override def rotate(k: Int): RList[T] = {
+    @tailrec
+    def aux(list: RList[T], rotatedElements: RList[T] = RNil, currentIndex: Int = 0) : RList[T] = {
+      if(list.isEmpty && currentIndex > 0) list ++ rotatedElements.reverse
+      else if(currentIndex == k) list ++ rotatedElements.reverse
+      else aux(list.tail, list.head :: rotatedElements, currentIndex + 1)
+    }
+    aux(this)
+  }
 }
 
 object RList {
@@ -260,7 +273,11 @@ object ListProblems extends App {
     println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).duplicateEach(3))
     println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).duplicateEach(1))
     println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).duplicateEach(0))
-    println(RList.from(1 to 15000).duplicateEach(5))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(2))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(3))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(5))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(6))
+    //println(RList.from(1 to 15000).duplicateEach(5))
   }
 
   testMediumDifficultyFunctions()
