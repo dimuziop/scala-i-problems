@@ -2,6 +2,7 @@ package dev.dimuzio
 package lists
 
 import scala.annotation.tailrec
+import scala.util.Random
 
 /**
  * User: patricio
@@ -36,6 +37,7 @@ sealed abstract class RList[+T] {
   def rle: RList[(T, Int)]
   def duplicateEach(times: Int): RList[T]
   def rotate(k: Int): RList[T]
+  def sample(k: Int): RList[T]
 }
 
 case object RNil extends RList[Nothing] {
@@ -74,6 +76,8 @@ case object RNil extends RList[Nothing] {
   override def duplicateEach(times: Int): RList[Nothing] = RNil
 
   override def rotate(k: Int): RList[Nothing] = RNil
+
+  override def sample(k: Int): RList[Nothing] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -217,14 +221,38 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     this.flatMap(x => aux(x))
   }
 
+  /*
+  Complexity: O(max(N, K))
+   */
   override def rotate(k: Int): RList[T] = {
     @tailrec
     def aux(list: RList[T], rotatedElements: RList[T] = RNil, currentIndex: Int = 0) : RList[T] = {
-      if(list.isEmpty && currentIndex > 0) list ++ rotatedElements.reverse
+      if(list.isEmpty && currentIndex == 0) this
+      else if (list.isEmpty) aux(this, RNil, currentIndex)
       else if(currentIndex == k) list ++ rotatedElements.reverse
       else aux(list.tail, list.head :: rotatedElements, currentIndex + 1)
     }
     aux(this)
+  }
+
+  /*
+  Complexity: O(N * K)
+   */
+  override def sample(k: Int): RList[T] = {
+    if (k < 0) return RNil
+    val r = new Random(System.currentTimeMillis())
+    val listLength = this.length
+    @tailrec
+    def aux(remainingElements: Int, randomizedList: RList[T] = RNil): RList[T] = {
+      if (remainingElements == 0) randomizedList
+      else aux(remainingElements - 1, this(r.nextInt(listLength)) :: randomizedList)
+    }
+    /*
+      Complexity: O(N * K)
+   */
+    def sampleElegant: RList[T] = RList.from(1 to k).map(_ => r.nextInt(listLength)).map(rV => this(rV))
+    //aux(k)
+    sampleElegant
   }
 }
 
@@ -277,6 +305,7 @@ object ListProblems extends App {
     println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(3))
     println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(5))
     println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(6))
+    println((1 :: 2 :: 3 :: 4 :: 5 :: RNil).rotate(8).sample(72))
     //println(RList.from(1 to 15000).duplicateEach(5))
   }
 
