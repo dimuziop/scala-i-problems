@@ -179,7 +179,24 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       if (list.isEmpty) newList.reverse
       else aux(list.tail, f(list.head).reverse ++ newList)
     }
-    aux(this)
+    //aux(this)
+    @tailrec
+    def betterFlatMap(remaining: RList[T], accumulator: RList[RList[S]]): RList[S] = {
+      if (remaining.isEmpty) concatenateAll(accumulator, RNil, RNil)
+      else betterFlatMap(remaining.tail, f(remaining.head).reverse :: accumulator)
+    }
+
+    /*
+      Complexity: O(Z)
+     */
+    @tailrec
+    def concatenateAll(elements: RList[RList[S]], currentList: RList[S], accumulator: RList[S]): RList[S] = {
+      if (currentList.isEmpty && elements.isEmpty) accumulator
+      else if (currentList.isEmpty) concatenateAll(elements.tail, elements.head, accumulator)
+      else concatenateAll(elements, currentList.tail, currentList.head :: accumulator)
+    }
+
+    betterFlatMap(this, RNil)
   }
 
   // Complexity O(N)
