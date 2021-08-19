@@ -12,22 +12,33 @@ import scala.util.Random
 
 sealed abstract class RList[+T] {
   def head: T
+
   def tail: RList[T]
+
   def isEmpty: Boolean
+
   def headOption: Option[T]
+
   def ::[S >: T](elem: S): RList[S] = new ::(elem, this)
+
   /**
    * Easy problems
    */
   def apply(index: Int): T
+
   def length: Int
+
   def reverse: RList[T]
+
   def ++[S >: T](anotherList: RList[S]): RList[S]
+
   def removeAt(index: Int): RList[T]
 
   // the big three
   def map[S](f: T => S): RList[S]
+
   def flatMap[S](f: T => RList[S]): RList[S]
+
   def filter(f: T => Boolean): RList[T]
 
   /**
@@ -35,9 +46,14 @@ sealed abstract class RList[+T] {
    */
   // run -length encoding
   def rle: RList[(T, Int)]
+
   def duplicateEach(times: Int): RList[T]
+
   def rotate(k: Int): RList[T]
+
   def sample(k: Int): RList[T]
+
+  def sorted[S >: T](ordering: Ordering[S]): RList[S]
 }
 
 case object RNil extends RList[Nothing] {
@@ -78,6 +94,8 @@ case object RNil extends RList[Nothing] {
   override def rotate(k: Int): RList[Nothing] = RNil
 
   override def sample(k: Int): RList[Nothing] = RNil
+
+  override def sorted[S >: Nothing](ordering: Ordering[S]): RList[S] = RNil
 }
 
 case class ::[+T](override val head: T, override val tail: RList[T]) extends RList[T] {
@@ -97,7 +115,8 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       //else if (remaining.isEmpty) throw new NoSuchElementException // no needed cause head empty throw the exception
       else helper(remaining.tail, count + 1)
     }
-    if(index < 0) throw new NoSuchElementException
+
+    if (index < 0) throw new NoSuchElementException
     helper(this)
   }
 
@@ -108,6 +127,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       else if (remaining.tail.isEmpty) str + remaining.head
       else toStringTailReq(remaining.tail, str + remaining.head + ", ")
     }
+
     s"[${toStringTailReq(this)}]"
   }
 
@@ -120,6 +140,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       if (list.isEmpty) value
       else aux(list.tail, value + 1)
     }
+
     aux(this)
   }
 
@@ -129,9 +150,10 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
      */
     @tailrec
     def aux(list: RList[T], reversed: RList[T] = RNil): RList[T] = {
-      if(list.isEmpty) reversed
+      if (list.isEmpty) reversed
       else aux(list.tail, reversed.::(list.head))
     }
+
     aux(this)
   }
 
@@ -144,6 +166,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       if (list.isEmpty) concatenated
       else aux(list.tail, list.head :: concatenated)
     }
+
     aux(this.reverse, anotherList)
   }
 
@@ -153,10 +176,11 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
   override def removeAt(index: Int): RList[T] = {
     @tailrec
     def aux(list: RList[T], newList: RList[T] = RNil, currentPosition: Int = 0): RList[T] = {
-      if(currentPosition < index && list.isEmpty) newList.reverse
+      if (currentPosition < index && list.isEmpty) newList.reverse
       else if (currentPosition == index) newList.reverse ++ list.tail
       else aux(list.tail, list.head :: newList, currentPosition + 1)
     }
+
     if (index < 0) return this
     aux(this)
   }
@@ -168,6 +192,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       if (list.isEmpty) newList.reverse
       else aux(list.tail, f(list.head) :: newList)
     }
+
     aux(this)
   }
 
@@ -179,6 +204,7 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
       if (list.isEmpty) newList.reverse
       else aux(list.tail, f(list.head).reverse ++ newList)
     }
+
     //aux(this)
     @tailrec
     def betterFlatMap(remaining: RList[T], accumulator: RList[RList[S]]): RList[S] = {
@@ -203,21 +229,22 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
   override def filter(f: T => Boolean): RList[T] = {
     @tailrec
     def aux(list: RList[T], newList: RList[T] = RNil): RList[T] = {
-      if(list.isEmpty) newList.reverse
+      if (list.isEmpty) newList.reverse
       else aux(list.tail, if (f(list.head)) list.head :: newList else newList)
     }
+
     aux(this)
   }
 
   /**
    * Medium difficulty
    */
-    /*
-    Complexity: O(N)
-     */
+  /*
+  Complexity: O(N)
+   */
   override def rle: RList[(T, Int)] = {
     @tailrec
-    def aux(remainingList: RList[T], lastTuple: (T, Int), newList: RList[(T, Int)] = RNil) : RList[(T, Int)] = {
+    def aux(remainingList: RList[T], lastTuple: (T, Int), newList: RList[(T, Int)] = RNil): RList[(T, Int)] = {
       if (remainingList.isEmpty && lastTuple._2 == 0) newList.reverse
       else if (remainingList.isEmpty) (lastTuple :: newList).reverse
       else if (remainingList.head == lastTuple._1) aux(remainingList.tail, lastTuple._1 -> (lastTuple._2 + 1), newList) // could be lastTuple.copy()
@@ -243,12 +270,13 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
    */
   override def rotate(k: Int): RList[T] = {
     @tailrec
-    def aux(list: RList[T], rotatedElements: RList[T] = RNil, currentIndex: Int = 0) : RList[T] = {
-      if(list.isEmpty && currentIndex == 0) this
+    def aux(list: RList[T], rotatedElements: RList[T] = RNil, currentIndex: Int = 0): RList[T] = {
+      if (list.isEmpty && currentIndex == 0) this
       else if (list.isEmpty) aux(this, RNil, currentIndex)
-      else if(currentIndex == k) list ++ rotatedElements.reverse
+      else if (currentIndex == k) list ++ rotatedElements.reverse
       else aux(list.tail, list.head :: rotatedElements, currentIndex + 1)
     }
+
     aux(this)
   }
 
@@ -259,59 +287,92 @@ case class ::[+T](override val head: T, override val tail: RList[T]) extends RLi
     if (k < 0) return RNil
     val r = new Random(System.currentTimeMillis())
     val listLength = this.length
+
     @tailrec
     def aux(remainingElements: Int, randomizedList: RList[T] = RNil): RList[T] = {
       if (remainingElements == 0) randomizedList
-      else aux(remainingElements - 1, this(r.nextInt(listLength)) :: randomizedList)
+      else aux(remainingElements - 1, this (r.nextInt(listLength)) :: randomizedList)
     }
+
     /*
       Complexity: O(N * K)
    */
-    def sampleElegant: RList[T] = RList.from(1 to k).map(_ => r.nextInt(listLength)).map(rV => this(rV))
+    def sampleElegant: RList[T] = RList.from(1 to k).map(_ => r.nextInt(listLength)).map(rV => this (rV))
     //aux(k)
     sampleElegant
+  }
+
+  /**
+   *Hard Problems
+   */
+  override def sorted[S >: T](ordering: Ordering[S]): RList[S] = {
+
+    /*
+    O(N) on after
+     */
+    @tailrec
+    def insertSorted(currentElement: S, after: RList[S], before: RList[S] = RNil): RList[S] = {
+      if (after.isEmpty || ordering.lteq(currentElement, after.head)) before.reverse ++ (currentElement :: after)
+      else insertSorted(currentElement, after.tail, after.head :: before)
+    }
+
+
+    /*
+    O(N^2)
+     */
+    @tailrec
+    def aux(remainingList: RList[S], ordered: RList[S] = RNil): RList[S] = {
+      if(remainingList.isEmpty) ordered
+      else aux(remainingList.tail, insertSorted(remainingList.head, ordered));
+    }
+
+    aux(this)
+
   }
 }
 
 object RList {
-  def from[T](iterable: Iterable[T]):RList[T] = {
+  def from[T](iterable: Iterable[T]): RList[T] = {
     @tailrec
     def aux(iterable: Iterable[T], acc: RList[T] = RNil): RList[T] = {
       if (iterable.isEmpty) acc
       else aux(iterable.tail, iterable.head :: acc)
     }
+
     aux(iterable).reverse
   }
 }
 
 object ListProblems extends App {
 
-  def testEasyFunctions(): Unit = {//val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
   val aSmallList = 1 :: 2 :: 3 :: 4 :: RNil
   val aSmallList2 = 1 :: 2 :: RNil
   val aLargeList = RList.from(0 to 5000000)
-  /*println(aSmallList(2))
-  println(aLargeList(5348))
-  println(aLargeList(15200))
-  println(aSmallList.length)
-  println(aSmallList.reverse)
-  println(aLargeList.reverse)
-  println(aLargeList.length)
-  println(aSmallList2.length)
-  println(RList.from(0 to 500))*/
 
-  //println(aSmallList ++ aSmallList2)
+  def testEasyFunctions(): Unit = { //val aSmallList = ::(1,::(2,::(3, ::(4, RNil)))).::(0)
 
-  println(aSmallList)
-  println(aSmallList.removeAt(10))
+    /*println(aSmallList(2))
+    println(aLargeList(5348))
+    println(aLargeList(15200))
+    println(aSmallList.length)
+    println(aSmallList.reverse)
+    println(aLargeList.reverse)
+    println(aLargeList.length)
+    println(aSmallList2.length)
+    println(RList.from(0 to 500))*/
 
-  println(aSmallList.map(x => x * 2))
-  println(aSmallList.filter(x => x % 2 == 0))
-  val time = System.currentTimeMillis()
-  //aLargeList.flatMap(x => x :: x *2 :: RNil) // 3 secs
-  aLargeList.map(_ + 2) // 1sec
-  println("time:" + (System.currentTimeMillis() - time))
-}
+    //println(aSmallList ++ aSmallList2)
+
+    println(aSmallList)
+    println(aSmallList.removeAt(10))
+
+    println(aSmallList.map(x => x * 2))
+    println(aSmallList.filter(x => x % 2 == 0))
+    val time = System.currentTimeMillis()
+    //aLargeList.flatMap(x => x :: x *2 :: RNil) // 3 secs
+    aLargeList.map(_ + 2) // 1sec
+    println("time:" + (System.currentTimeMillis() - time))
+  }
 
   def testMediumDifficultyFunctions(): Unit = {
     println((1 :: 1 :: 1 :: 2 :: 2 :: 3 :: RNil).rle)
@@ -326,7 +387,15 @@ object ListProblems extends App {
     //println(RList.from(1 to 15000).duplicateEach(5))
   }
 
-  testMediumDifficultyFunctions()
+
+  def testHighDifficultyFunctions(): Unit = {
+    val ordering = Ordering.fromLessThan[Int](_ < _)
+    println((2 :: 1 :: 5 :: 3 :: 4 :: 6 :: RNil).sorted[Int](ordering))
+    println(aLargeList.sample(10).sorted(ordering))
+  }
+
+
+  testHighDifficultyFunctions()
 
 
 }
